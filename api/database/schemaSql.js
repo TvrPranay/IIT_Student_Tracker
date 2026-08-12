@@ -1,3 +1,4 @@
+export const schemaSql = `
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -6,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   phone VARCHAR(50),
   password_hash VARCHAR(255) NOT NULL,
   role VARCHAR(50) NOT NULL CHECK(role IN ('parent', 'student')),
-  class_level VARCHAR(50) CHECK(class_level IN ('11th', '12th')), -- Nullable for parent
+  class_level VARCHAR(50) CHECK(class_level IN ('11th', '12th')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Parent-student linking table (Many-to-Many)
+-- Parent-student linking table
 CREATE TABLE IF NOT EXISTS parent_student_links (
   id SERIAL PRIMARY KEY,
   parent_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -67,7 +68,7 @@ CREATE TABLE IF NOT EXISTS student_topic_progress (
 CREATE TABLE IF NOT EXISTS daily_logs (
   id SERIAL PRIMARY KEY,
   student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  log_date VARCHAR(50) NOT NULL, -- YYYY-MM-DD
+  log_date VARCHAR(50) NOT NULL,
   subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
   chapter_id INTEGER REFERENCES syllabus_chapters(id) ON DELETE SET NULL,
   sums_solved INTEGER NOT NULL DEFAULT 0,
@@ -100,8 +101,8 @@ CREATE TABLE IF NOT EXISTS weekly_tests (
   created_by_parent_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   title VARCHAR(255) NOT NULL,
   subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL,
-  syllabus_scope TEXT NOT NULL, -- JSON string representation of chapter IDs
-  test_date VARCHAR(50) NOT NULL, -- YYYY-MM-DD
+  syllabus_scope TEXT NOT NULL,
+  test_date VARCHAR(50) NOT NULL,
   total_marks INTEGER NOT NULL,
   file_url TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -121,10 +122,11 @@ CREATE TABLE IF NOT EXISTS test_results (
   test_id INTEGER NOT NULL REFERENCES weekly_tests(id) ON DELETE CASCADE,
   student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   total_score INTEGER NOT NULL,
-  subject_breakdown TEXT NOT NULL, -- JSON string
+  subject_breakdown TEXT NOT NULL,
   weak_topics TEXT,
   answer_sheet_file_url TEXT,
   time_taken_minutes INTEGER,
   submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(test_id, student_id)
 );
+`;

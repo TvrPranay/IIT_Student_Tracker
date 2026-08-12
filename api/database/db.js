@@ -1,8 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { schemaSql } from './schemaSql.js';
 
 // Load dotenv configuration locally
 if (process.env.NODE_ENV !== 'production') {
@@ -58,15 +56,9 @@ export const exec = async (sql) => {
   await pool.query(sql);
 };
 
-// Read schema.sql and create tables
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
-
 export const initDb = async () => {
   try {
-    const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-    await exec(schema);
+    await exec(schemaSql);
     console.log('PostgreSQL database tables successfully verified/created.');
   } catch (err) {
     console.error('Error initializing PostgreSQL tables:', err.message);
