@@ -1,12 +1,4 @@
-import db, { initDb, run, query, get, exec } from './db.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const dbFile = path.join(__dirname, 'database.db');
+import pool, { initDb, run, query, get, exec } from './db.js';
 
 const syllabusData = {
   "Physics": {
@@ -117,28 +109,39 @@ const syllabusData = {
 
 const seed = async () => {
   try {
-    console.log('Dropping old tables for fresh seed...');
-    await exec(`
-      DROP TABLE IF EXISTS test_results;
-      DROP TABLE IF EXISTS test_assignments;
-      DROP TABLE IF EXISTS weekly_tests;
-      DROP TABLE IF EXISTS parent_uploads;
-      DROP TABLE IF EXISTS daily_logs;
-      DROP TABLE IF EXISTS student_topic_progress;
-      DROP TABLE IF EXISTS syllabus_topics;
-      DROP TABLE IF EXISTS syllabus_chapters;
-      DROP TABLE IF EXISTS parent_student_links;
-      DROP TABLE IF EXISTS student_profiles;
-      DROP TABLE IF EXISTS users;
-      DROP TABLE IF EXISTS subjects;
-    `);
+    const forceDrop = process.argv.includes('--force');
 
-    console.log('Initializing database schema before seeding...');
+    if (forceDrop) {
+      console.log('Force dropping existing database tables...');
+      await exec(`
+        DROP TABLE IF EXISTS test_results CASCADE;
+        DROP TABLE IF EXISTS test_assignments CASCADE;
+        DROP TABLE IF EXISTS weekly_tests CASCADE;
+        DROP TABLE IF EXISTS parent_uploads CASCADE;
+        DROP TABLE IF EXISTS daily_logs CASCADE;
+        DROP TABLE IF EXISTS student_topic_progress CASCADE;
+        DROP TABLE IF EXISTS syllabus_topics CASCADE;
+        DROP TABLE IF EXISTS syllabus_chapters CASCADE;
+        DROP TABLE IF EXISTS parent_student_links CASCADE;
+        DROP TABLE IF EXISTS student_profiles CASCADE;
+        DROP TABLE IF EXISTS users CASCADE;
+        DROP TABLE IF EXISTS subjects CASCADE;
+      `);
+    }
+
+    console.log('Initializing PostgreSQL database schema before seeding...');
     await initDb();
+
+    // Check if subjects are already seeded to prevent duplicate inserts
+    const subjectsCheck = await get("SELECT COUNT(*) as count FROM subjects");
+    if (parseInt(subjectsCheck.count) > 0) {
+      console.log('PostgreSQL database already has seeded data. Skipping seed sequence.');
+      process.exit(0);
+    }
 
     console.log('Seeding subjects...');
     for (const subjectName of Object.keys(syllabusData)) {
-      await run('INSERT OR IGNORE INTO subjects (name) VALUES (?)', [subjectName]);
+      await run('INSERT INTO subjects (name) VALUES (?) ON CONFLICT (name) DO NOTHING', [subjectName]);
     }
 
     console.log('Seeding chapters and topics...');
@@ -168,7 +171,7 @@ const seed = async () => {
       }
     }
 
-    console.log('MPC Seeding successfully completed!');
+    console.log('PostgreSQL Seeding successfully completed!');
     process.exit(0);
   } catch (err) {
     console.error('Seeding failed:', err);
