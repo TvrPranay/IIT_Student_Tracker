@@ -4,6 +4,7 @@ import multer from 'multer';
 import { put } from '@vercel/blob';
 import dotenv from 'dotenv';
 import { query } from './database/db.js';
+import { seedDatabase } from './database/seed.js';
 import authRoutes from './routes/auth.js';
 import studentRoutes from './routes/student.js';
 import parentRoutes from './routes/parent.js';
@@ -15,6 +16,22 @@ if (process.env.NODE_ENV !== 'production') {
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Auto-initialize PostgreSQL database tables and seed syllabus data on the first request
+let dbInitialized = false;
+app.use(async (req, res, next) => {
+  if (!dbInitialized && process.env.DATABASE_URL) {
+    try {
+      console.log('Auto-verifying database tables and seeding status...');
+      await seedDatabase(false); // Will initialize schema and seed if subjects table is empty
+      dbInitialized = true;
+      console.log('Database verification successfully completed.');
+    } catch (err) {
+      console.error('Database auto-initialization failed:', err.message);
+    }
+  }
+  next();
+});
 
 // Enable CORS
 app.use(cors());

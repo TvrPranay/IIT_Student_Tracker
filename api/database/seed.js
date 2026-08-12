@@ -107,10 +107,8 @@ const syllabusData = {
   }
 };
 
-const seed = async () => {
+export const seedDatabase = async (forceDrop = false) => {
   try {
-    const forceDrop = process.argv.includes('--force');
-
     if (forceDrop) {
       console.log('Force dropping existing database tables...');
       await exec(`
@@ -136,7 +134,7 @@ const seed = async () => {
     const subjectsCheck = await get("SELECT COUNT(*) as count FROM subjects");
     if (parseInt(subjectsCheck.count) > 0) {
       console.log('PostgreSQL database already has seeded data. Skipping seed sequence.');
-      process.exit(0);
+      return;
     }
 
     console.log('Seeding subjects...');
@@ -172,11 +170,16 @@ const seed = async () => {
     }
 
     console.log('PostgreSQL Seeding successfully completed!');
-    process.exit(0);
   } catch (err) {
     console.error('Seeding failed:', err);
-    process.exit(1);
+    throw err;
   }
 };
 
-seed();
+// Check if run directly from CLI
+if (process.argv[1] && (process.argv[1].endsWith('seed.js') || process.argv[1].endsWith('seed'))) {
+  const forceDrop = process.argv.includes('--force');
+  seedDatabase(forceDrop)
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
