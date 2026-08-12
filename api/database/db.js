@@ -22,8 +22,15 @@ function convertSql(sql) {
   return sql.replace(/\?/g, () => `$${index++}`);
 }
 
+const checkDbUrl = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is missing. Please configure it in your Vercel Project Settings.');
+  }
+};
+
 // Emulate SQLite 'db.all' -> returns all rows
 export const query = async (sql, params = []) => {
+  checkDbUrl();
   const convertedSql = convertSql(sql);
   const res = await pool.query(convertedSql, params);
   return res.rows;
@@ -31,6 +38,7 @@ export const query = async (sql, params = []) => {
 
 // Emulate SQLite 'db.get' -> returns first row or null
 export const get = async (sql, params = []) => {
+  checkDbUrl();
   const convertedSql = convertSql(sql);
   const res = await pool.query(convertedSql, params);
   return res.rows[0] || null;
@@ -38,6 +46,7 @@ export const get = async (sql, params = []) => {
 
 // Emulate SQLite 'db.run' -> returns { id, changes }
 export const run = async (sql, params = []) => {
+  checkDbUrl();
   let convertedSql = convertSql(sql);
   
   // Append RETURNING * to INSERT queries to easily capture primary keys (like id or user_id)
@@ -53,6 +62,7 @@ export const run = async (sql, params = []) => {
 
 // Execute multiple SQL statements
 export const exec = async (sql) => {
+  checkDbUrl();
   await pool.query(sql);
 };
 
