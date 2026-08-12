@@ -1,0 +1,24 @@
+# Dependency directories
+node_modules/
+
+# Production build outputs
+dist/
+build/
+
+# Local databases and binaries
+backend/database/database.db
+backend/database/database.db-journal
+
+# File uploads (local directory)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Environment variables
+.env
+.env.local
+
+# IDE/System configuration
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
